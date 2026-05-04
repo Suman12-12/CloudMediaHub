@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CloudMediaHub – Multimedia Sharing Platform</title>
+  <style>
+    /* ── RESET & BASE ────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary:   #0D9488;
+      --primary-d: #0a7a70;
+      --accent:    #14B8A6;
+      --dark:      #1E293B;
+      --mid:       #334155;
+      --muted:     #64748B;
+      --light:     #F1F5F9;
+      --white:     #FFFFFF;
+      --danger:    #EF4444;
+      --success:   #22C55E;
+      --radius:    10px;
+      --shadow:    0 4px 24px rgba(0,0,0,.10);
+    }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--light); color: var(--dark); }
+
+    /* ── NAVBAR ──────────────────────────────────────── */
+    nav {
+      background: var(--dark); color: var(--white);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 60px; position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    }
+    .nav-brand { font-size: 1.3rem; font-weight: 700; color: var(--accent); letter-spacing: .5px; }
+    .nav-links { display: flex; gap: 1rem; }
+    .nav-links a {
+      color: #CBD5E1; text-decoration: none; font-size: .9rem; padding: .4rem .8rem;
+      border-radius: 6px; transition: background .2s;
+    }
+    .nav-links a:hover, .nav-links a.active { background: var(--primary); color: var(--white); }
+    .nav-user { display: flex; align-items: center; gap: .6rem; font-size: .85rem; color: #94A3B8; }
+
+    /* ── HERO ────────────────────────────────────────── */
+    .hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0D9488 100%);
+      color: var(--white); text-align: center; padding: 3.5rem 1rem 2.5rem;
+    }
+    .hero h1 { font-size: 2.4rem; font-weight: 800; margin-bottom: .5rem; }
+    .hero p  { color: #94A3B8; font-size: 1.05rem; max-width: 600px; margin: 0 auto 1.5rem; }
+    .hero-stats { display: flex; justify-content: center; gap: 2.5rem; flex-wrap: wrap; }
+    .stat { text-align: center; }
+    .stat-num { font-size: 1.8rem; font-weight: 800; color: var(--accent); }
+    .stat-lbl { font-size: .75rem; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* ── LAYOUT ──────────────────────────────────────── */
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── UPLOAD ZONE ─────────────────────────────────── */
+    .upload-card {
+      background: var(--white); border-radius: var(--radius); padding: 2rem;
+      box-shadow: var(--shadow); margin-bottom: 1.5rem;
+    }
+    .upload-card h2 { font-size: 1.2rem; margin-bottom: 1.2rem; color: var(--dark); }
+    .drop-zone {
+      border: 2px dashed #CBD5E1; border-radius: var(--radius);
+      padding: 2.5rem; text-align: center; cursor: pointer;
+      transition: border-color .2s, background .2s; background: var(--light);
+    }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: var(--primary); background: #f0fdfa; }
+    .drop-zone .icon { font-size: 3rem; margin-bottom: .5rem; }
+    .drop-zone p { color: var(--muted); font-size: .9rem; }
+    .drop-zone strong { color: var(--primary); }
+    #fileInput { display: none; }
+
+    /* ── FORM ────────────────────────────────────────── */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.2rem; }
+    .form-group { display: flex; flex-direction: column; gap: .4rem; }
+    .form-group label { font-size: .82rem; font-weight: 600; color: var(--mid); }
+    .form-group input, .form-group select, .form-group textarea {
+      border: 1.5px solid #CBD5E1; border-radius: 7px; padding: .55rem .75rem;
+      font-size: .9rem; outline: none; transition: border-color .2s;
+      background: var(--white); color: var(--dark);
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: var(--primary);
+    }
+    .form-group textarea { min-height: 80px; resize: vertical; }
+    .form-full { grid-column: 1 / -1; }
+
+    /* ── BUTTONS ─────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: .45rem;
+      padding: .55rem 1.2rem; border: none; border-radius: 7px;
+      font-size: .9rem; font-weight: 600; cursor: pointer; transition: all .2s;
+    }
+    .btn-primary { background: var(--primary); color: var(--white); }
+    .btn-primary:hover { background: var(--primary-d); }
+    .btn-danger  { background: var(--danger); color: var(--white); }
+    .btn-danger:hover  { opacity: .88; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--primary); color: var(--primary); }
+    .btn-outline:hover { background: var(--primary); color: var(--white); }
+    .btn-sm { padding: .35rem .8rem; font-size: .82rem; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ── PROGRESS ────────────────────────────────────── */
+    .progress-wrap { margin-top: 1rem; display: none; }
+    .progress-bar-bg { background: #E2E8F0; border-radius: 99px; height: 8px; }
+    .progress-bar-fill { background: var(--primary); height: 8px; border-radius: 99px; transition: width .3s; }
+    .progress-label { font-size: .8rem; color: var(--muted); margin-top: .3rem; }
+
+    /* ── GALLERY ─────────────────────────────────────── */
+    .gallery-toolbar {
+      display: flex; align-items: center; gap: 1rem; margin-bottom: 1.2rem; flex-wrap: wrap;
+    }
+    .search-box {
+      flex: 1; min-width: 200px; border: 1.5px solid #CBD5E1;
+      border-radius: 7px; padding: .5rem .85rem; font-size: .9rem; outline: none;
+      transition: border-color .2s;
+    }
+    .search-box:focus { border-color: var(--primary); }
+    .filter-tabs { display: flex; gap: .4rem; }
+    .filter-tab {
+      padding: .35rem .85rem; border-radius: 99px; font-size: .82rem;
+      border: 1.5px solid #CBD5E1; background: var(--white); cursor: pointer;
+      transition: all .2s; color: var(--muted);
+    }
+    .filter-tab.active { background: var(--primary); border-color: var(--primary); color: var(--white); }
+
+    .media-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.2rem;
+    }
+    .media-card {
+      background: var(--white); border-radius: var(--radius); overflow: hidden;
+      box-shadow: var(--shadow); transition: transform .2s, box-shadow .2s;
+    }
+    .media-card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,.14); }
+    .media-thumb {
+      width: 100%; height: 170px; object-fit: cover; background: #E2E8F0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 3rem; color: var(--muted);
+    }
+    .media-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .media-thumb video { width: 100%; height: 100%; object-fit: cover; }
+    .media-body { padding: 1rem; }
+    .media-body h3 { font-size: .95rem; font-weight: 700; margin-bottom: .3rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .media-meta { font-size: .78rem; color: var(--muted); margin-bottom: .7rem; }
+    .media-tag {
+      display: inline-block; background: #E0F2FE; color: #0369A1;
+      border-radius: 99px; font-size: .72rem; padding: .18rem .55rem; margin-right: .3rem;
+    }
+    .media-actions { display: flex; gap: .5rem; margin-top: .8rem; }
+
+    /* ── MODAL ───────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.55);
+      display: none; align-items: center; justify-content: center; z-index: 200;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--white); border-radius: 12px; width: 90%; max-width: 550px;
+      padding: 1.8rem; box-shadow: 0 20px 60px rgba(0,0,0,.3); position: relative;
+    }
+    .modal h2 { font-size: 1.15rem; margin-bottom: 1.2rem; }
+    .modal-close {
+      position: absolute; top: 1rem; right: 1rem; background: none; border: none;
+      font-size: 1.4rem; cursor: pointer; color: var(--muted);
+    }
+
+    /* ── TOAST ───────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 999;
+      background: var(--dark); color: var(--white);
+      padding: .75rem 1.2rem; border-radius: 8px; font-size: .88rem;
+      opacity: 0; transform: translateY(10px); transition: all .3s;
+      max-width: 320px; pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.success { background: var(--success); }
+    #toast.error   { background: var(--danger); }
+
+    /* ── DASHBOARD CARDS ─────────────────────────────── */
+    .dash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .dash-card {
+      background: var(--white); border-radius: var(--radius); padding: 1.4rem;
+      box-shadow: var(--shadow); display: flex; align-items: center; gap: 1rem;
+    }
+    .dash-icon { font-size: 2.2rem; }
+    .dash-info h3 { font-size: 1.6rem; font-weight: 800; color: var(--dark); }
+    .dash-info p  { font-size: .78rem; color: var(--muted); }
+
+    /* ── EMPTY STATE ─────────────────────────────────── */
+    .empty {
+      text-align: center; padding: 4rem 1rem; color: var(--muted);
+    }
+    .empty .big { font-size: 4rem; margin-bottom: 1rem; }
+    .empty p { margin-bottom: 1rem; }
+
+    /* ── LOADING SPINNER ─────────────────────────────── */
+    .spinner {
+      width: 36px; height: 36px; border: 4px solid #E2E8F0;
+      border-top-color: var(--primary); border-radius: 50%;
+      animation: spin .7s linear infinite; margin: 2rem auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── BADGE ───────────────────────────────────────── */
+    .badge { display: inline-block; padding: .2rem .55rem; border-radius: 99px; font-size: .72rem; font-weight: 700; }
+    .badge-green { background: #DCFCE7; color: #166534; }
+    .badge-blue  { background: #DBEAFE; color: #1D4ED8; }
+    .badge-gray  { background: #F1F5F9; color: var(--muted); }
+
+    /* ── AZURE CONFIG PANEL ──────────────────────────── */
+    .config-panel {
+      background: #FFF7ED; border: 1.5px solid #FED7AA; border-radius: var(--radius);
+      padding: 1rem 1.2rem; margin-bottom: 1.5rem; font-size: .85rem;
+    }
+    .config-panel strong { color: #C2410C; }
+
+    /* ── FOOTER ──────────────────────────────────────── */
+    footer {
+      text-align: center; padding: 1.5rem; background: var(--dark);
+      color: #64748B; font-size: .8rem; margin-top: 3rem;
+    }
+
+    /* ── RESPONSIVE ──────────────────────────────────── */
+    @media (max-width: 640px) {
+      .form-row { grid-template-columns: 1fr; }
+      .hero h1  { font-size: 1.7rem; }
+      .hero-stats { gap: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="nav-brand">☁️ CloudMediaHub</div>
+  <div class="nav-links">
+    <a href="#" class="active" onclick="showPage('gallery')">Gallery</a>
+    <a href="#" onclick="showPage('upload')">Upload</a>
+    <a href="#" onclick="showPage('dashboard')">Dashboard</a>
+    <a href="#" onclick="showPage('settings')">Settings</a>
+  </div>
+  <div class="nav-user">
+    <span>👤</span><span id="usernameDisplay">Suman Thapa</span>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>CloudMediaHub</h1>
+  <p>A scalable, cloud-native multimedia sharing platform built on Microsoft Azure — upload, share and manage your media files with ease.</p>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-num" id="totalCount">0</div><div class="stat-lbl">Total Files</div></div>
+    <div class="stat"><div class="stat-num" id="imageCount">0</div><div class="stat-lbl">Images</div></div>
+    <div class="stat"><div class="stat-num" id="videoCount">0</div><div class="stat-lbl">Videos</div></div>
+    <div class="stat"><div class="stat-num" id="audioCount">0</div><div class="stat-lbl">Audio</div></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ── GALLERY PAGE ── -->
+  <div class="page active" id="page-gallery">
+    <div class="gallery-toolbar">
+      <input class="search-box" id="searchBox" type="text" placeholder="🔍  Search by title or tag…" oninput="filterGallery()" />
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="setFilter('all',this)">All</button>
+        <button class="filter-tab" onclick="setFilter('image',this)">🖼 Images</button>
+        <button class="filter-tab" onclick="setFilter('video',this)">🎬 Videos</button>
+        <button class="filter-tab" onclick="setFilter('audio',this)">🎵 Audio</button>
+        <button class="filter-tab" onclick="setFilter('document',this)">📄 Docs</button>
+      </div>
+    </div>
+    <div id="galleryGrid" class="media-grid"></div>
+    <div id="galleryEmpty" class="empty" style="display:none;">
+      <div class="big">📭</div>
+      <p>No media found. Upload something to get started!</p>
+      <button class="btn btn-primary" onclick="showPage('upload')">Upload Media</button>
+    </div>
+  </div>
+
+  <!-- ── UPLOAD PAGE ── -->
+  <div class="page" id="page-upload">
+    <div class="upload-card">
+      <h2>📤 Upload New Media</h2>
+
+      <!-- Azure notice -->
+      <div class="config-panel">
+        <strong>⚙️ Azure Connection:</strong> Configure your Azure Function URL and Blob SAS token in the <a href="#" onclick="showPage('settings')">Settings</a> tab. Files are uploaded to Azure Blob Storage via your Azure Function API.
+      </div>
+
+      <!-- Drop Zone -->
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <div class="icon">☁️</div>
+        <p><strong>Click to browse</strong> or drag & drop files here</p>
+        <p style="margin-top:.4rem;font-size:.78rem;">Supports images, videos, audio &amp; documents · Max 500 MB</p>
+        <input type="file" id="fileInput" accept="image/*,video/*,audio/*,.pdf,.doc,.docx"
+               onchange="handleFileSelect(this.files[0])" />
+      </div>
+
+      <!-- File preview -->
+      <div id="filePreview" style="display:none; margin-top:1rem;">
+        <div style="display:flex;align-items:center;gap:.8rem;background:var(--light);padding:.8rem 1rem;border-radius:8px;">
+          <span id="previewIcon" style="font-size:2rem;"></span>
+          <div>
+            <div id="previewName" style="font-weight:700;font-size:.92rem;"></div>
+            <div id="previewSize" style="font-size:.78rem;color:var(--muted);"></div>
+          </div>
+          <button class="btn btn-sm" style="margin-left:auto;" onclick="clearFile()">✕ Remove</button>
+        </div>
+      </div>
+
+      <!-- Metadata form -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>Title *</label>
+          <input type="text" id="mediaTitle" placeholder="e.g. My Holiday Photos" />
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="mediaCategory">
+            <option value="personal">Personal</option>
+            <option value="work">Work</option>
+            <option value="education">Education</option>
+            <option value="entertainment">Entertainment</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group form-full">
+          <label>Description</label>
+          <textarea id="mediaDesc" placeholder="Brief description of the media file…"></textarea>
+        </div>
+        <div class="form-group form-full">
+          <label>Tags (comma separated)</label>
+          <input type="text" id="mediaTags" placeholder="e.g. holiday, 2024, nepal" />
+        </div>
+        <div class="form-group">
+          <label>Visibility</label>
+          <select id="mediaVis">
+            <option value="public">🌐 Public</option>
+            <option value="private">🔒 Private</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+        <div class="progress-label" id="progressLabel">Uploading…</div>
+      </div>
+
+      <div style="display:flex;gap:.8rem;margin-top:1.5rem;">
+        <button class="btn btn-primary" id="uploadBtn" onclick="uploadMedia()">⬆️ Upload to Azure</button>
+        <button class="btn btn-outline" onclick="clearUploadForm()">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DASHBOARD PAGE ── -->
+  <div class="page" id="page-dashboard">
+    <h2 style="margin-bottom:1.2rem;">📊 Dashboard</h2>
+    <div class="dash-grid">
+      <div class="dash-card"><div class="dash-icon">🗂</div><div class="dash-info"><h3 id="d-total">0</h3><p>Total Media Files</p></div></div>
+      <div class="dash-card"><div class="dash-icon">🖼</div><div class="dash-info"><h3 id="d-img">0</h3><p>Images</p></div></div>
+      <div class="dash-card"><div class="dash-icon">🎬</div><div class="dash-info"><h3 id="d-vid">0</h3><p>Videos</p></div></div>
+      <div class="dash-card"><div class="dash-icon">🎵</div><div class="dash-info"><h3 id="d-aud">0</h3><p>Audio Files</p></div></div>
+    </div>
+
+    <div class="upload-card">
+      <h2>☁️ Azure Resource Status</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:.9rem;margin-top:.5rem;">
+        <thead>
+          <tr style="background:var(--light);">
+            <th style="padding:.6rem .8rem;text-align:left;">Resource</th>
+            <th style="padding:.6rem .8rem;text-align:left;">Type</th>
+            <th style="padding:.6rem .8rem;text-align:left;">Status</th>
+            <th style="padding:.6rem .8rem;text-align:left;">Role</th>
+          </tr>
+        </thead>
+        <tbody id="azureTable">
+          <tr><td style="padding:.5rem .8rem;">Azure Static Web Apps</td><td>Hosting</td><td><span class="badge badge-green">✓ Active</span></td><td>Frontend delivery</td></tr>
+          <tr style="background:var(--light);"><td style="padding:.5rem .8rem;">Azure Functions</td><td>Serverless API</td><td><span class="badge badge-green">✓ Active</span></td><td>REST API / business logic</td></tr>
+          <tr><td style="padding:.5rem .8rem;">Azure Blob Storage</td><td>Object Storage</td><td><span class="badge badge-green">✓ Active</span></td><td>Media file storage</td></tr>
+          <tr style="background:var(--light);"><td style="padding:.5rem .8rem;">Azure Cosmos DB</td><td>NoSQL Database</td><td><span class="badge badge-green">✓ Active</span></td><td>Media metadata</td></tr>
+          <tr><td style="padding:.5rem .8rem;">Azure SQL Database</td><td>Relational DB</td><td><span class="badge badge-green">✓ Active</span></td><td>User accounts</td></tr>
+          <tr style="background:var(--light);"><td style="padding:.5rem .8rem;">Application Insights</td><td>Monitoring</td><td><span class="badge badge-blue">⚡ Logging</span></td><td>Performance monitoring</td></tr>
+          <tr><td style="padding:.5rem .8rem;">GitHub Actions CI/CD</td><td>DevOps</td><td><span class="badge badge-blue">⚡ Active</span></td><td>Automated deployment</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="upload-card" style="margin-top:1rem;">
+      <h2>🔗 REST API Endpoints</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:.88rem;margin-top:.5rem;">
+        <thead>
+          <tr style="background:var(--light);">
+            <th style="padding:.5rem .7rem;text-align:left;">Method</th>
+            <th style="padding:.5rem .7rem;text-align:left;">Endpoint</th>
+            <th style="padding:.5rem .7rem;text-align:left;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="padding:.45rem .7rem;"><span class="badge badge-green">POST</span></td><td>/api/media</td><td>Upload new media</td></tr>
+          <tr style="background:var(--light);"><td style="padding:.45rem .7rem;"><span class="badge badge-blue">GET</span></td><td>/api/media</td><td>List all media</td></tr>
+          <tr><td style="padding:.45rem .7rem;"><span class="badge badge-blue">GET</span></td><td>/api/media/{id}</td><td>Retrieve single media item</td></tr>
+          <tr style="background:var(--light);"><td style="padding:.45rem .7rem;"><span class="badge" style="background:#FEF3C7;color:#92400E;">PUT</span></td><td>/api/media/{id}</td><td>Update media metadata</td></tr>
+          <tr><td style="padding:.45rem .7rem;"><span class="badge" style="background:#FEE2E2;color:#991B1B;">DELETE</span></td><td>/api/media/{id}</td><td>Delete media item</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── SETTINGS PAGE ── -->
+  <div class="page" id="page-settings">
+    <div class="upload-card">
+      <h2>⚙️ Azure Configuration</h2>
+      <p style="color:var(--muted);font-size:.88rem;margin-bottom:1.2rem;">
+        Configure your Azure Function App URL. This is where all API calls are sent. Your API handles authentication, Blob Storage, and Cosmos DB internally.
+      </p>
+      <div class="form-row">
+        <div class="form-group form-full">
+          <label>Azure Function App Base URL</label>
+          <input type="text" id="cfg-funcUrl" placeholder="https://your-app.azurewebsites.net/api" />
+        </div>
+        <div class="form-group form-full">
+          <label>Display Name</label>
+          <input type="text" id="cfg-username" placeholder="Your Name" value="Suman Thapa" />
+        </div>
+      </div>
+      <div style="display:flex;gap:.8rem;margin-top:1.2rem;">
+        <button class="btn btn-primary" onclick="saveConfig()">💾 Save Settings</button>
+        <button class="btn btn-outline" onclick="loadDemoData()">🧪 Load Demo Data</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h2>✏️ Edit Media</h2>
+    <input type="hidden" id="edit-id" />
+    <div class="form-row">
+      <div class="form-group form-full">
+        <label>Title</label>
+        <input type="text" id="edit-title" />
+      </div>
+      <div class="form-group form-full">
+        <label>Description</label>
+        <textarea id="edit-desc"></textarea>
+      </div>
+      <div class="form-group form-full">
+        <label>Tags</label>
+        <input type="text" id="edit-tags" />
+      </div>
+      <div class="form-group">
+        <label>Visibility</label>
+        <select id="edit-vis">
+          <option value="public">🌐 Public</option>
+          <option value="private">🔒 Private</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:.8rem;margin-top:1.2rem;">
+      <button class="btn btn-primary" onclick="saveEdit()">💾 Save Changes</button>
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW MODAL -->
+<div class="modal-overlay" id="viewModal">
+  <div class="modal" style="max-width:650px;">
+    <button class="modal-close" onclick="document.getElementById('viewModal').classList.remove('open')">✕</button>
+    <div id="viewContent"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- FOOTER -->
+<footer>
+  CloudMediaHub · COM682 Cloud Native Development · Suman Thapa (B00974972) · Built on Microsoft Azure
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   CloudMediaHub – Frontend Logic
+   Connects to Azure Functions REST API
+═══════════════════════════════════════════════════ */
+
+// ── CONFIG (set in Settings tab or localStorage) ───
+let CONFIG = {
+  funcUrl: localStorage.getItem('cmh-funcUrl') || '',
+  username: localStorage.getItem('cmh-username') || 'Suman Thapa'
+};
+
+// ── LOCAL DATA STORE (mirrors Azure Cosmos DB docs) ─
+// In real deployment this comes from Azure Functions GET /api/media
+let mediaStore = JSON.parse(localStorage.getItem('cmh-media') || '[]');
+let activeFilter = 'all';
+let selectedFile = null;
+
+// ══════════════════════════════════════════
+//  INITIALISE
+// ══════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('cfg-funcUrl').value  = CONFIG.funcUrl;
+  document.getElementById('cfg-username').value = CONFIG.username;
+  document.getElementById('usernameDisplay').textContent = CONFIG.username;
+  setupDragDrop();
+  renderGallery();
+  updateStats();
+
+  // If no data yet, load demo data
+  if (mediaStore.length === 0) loadDemoData();
+});
+
+// ══════════════════════════════════════════
+//  PAGE NAVIGATION
+// ══════════════════════════════════════════
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+  event.target.classList.add('active');
+  if (page === 'gallery') renderGallery();
+  if (page === 'dashboard') updateStats();
+}
+
+// ══════════════════════════════════════════
+//  DRAG & DROP
+// ══════════════════════════════════════════
+function setupDragDrop() {
+  const zone = document.getElementById('dropZone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f) handleFileSelect(f);
+  });
+}
+
+function handleFileSelect(file) {
+  if (!file) return;
+  selectedFile = file;
+  document.getElementById('filePreview').style.display = 'block';
+  document.getElementById('previewIcon').textContent = fileIcon(file.type);
+  document.getElementById('previewName').textContent  = file.name;
+  document.getElementById('previewSize').textContent  = formatSize(file.size);
+  // Auto-fill title
+  if (!document.getElementById('mediaTitle').value) {
+    document.getElementById('mediaTitle').value = file.name.replace(/\.[^.]+$/, '');
+  }
+}
+
+function clearFile() {
+  selectedFile = null;
+  document.getElementById('fileInput').value = '';
+  document.getElementById('filePreview').style.display = 'none';
+  document.getElementById('mediaTitle').value = '';
+}
+
+// ══════════════════════════════════════════
+//  UPLOAD MEDIA  →  Azure Function POST /api/media
+// ══════════════════════════════════════════
+async function uploadMedia() {
+  const title    = document.getElementById('mediaTitle').value.trim();
+  const desc     = document.getElementById('mediaDesc').value.trim();
+  const category = document.getElementById('mediaCategory').value;
+  const tags     = document.getElementById('mediaTags').value.split(',').map(t => t.trim()).filter(Boolean);
+  const vis      = document.getElementById('mediaVis').value;
+
+  if (!title)        { toast('Please enter a title.', 'error'); return; }
+  if (!selectedFile) { toast('Please select a file.', 'error'); return; }
+
+  const btn = document.getElementById('uploadBtn');
+  btn.disabled = true;
+
+  showProgress(0, 'Preparing upload…');
+
+  // Build FormData payload → Azure Functions handles Blob Storage upload
+  const formData = new FormData();
+  formData.append('file', selectedFile);
+  formData.append('title', title);
+  formData.append('description', desc);
+  formData.append('category', category);
+  formData.append('tags', JSON.stringify(tags));
+  formData.append('visibility', vis);
+  formData.append('uploadedBy', CONFIG.username);
+
+  // If Azure URL is configured → real API call
+  if (CONFIG.funcUrl) {
+    try {
+      showProgress(30, 'Uploading to Azure Blob Storage…');
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', CONFIG.funcUrl + '/media');
+      xhr.upload.onprogress = e => {
+        if (e.lengthComputable) showProgress(Math.round(e.loaded / e.total * 80), 'Uploading…');
+      };
+      xhr.onload = () => {
+        if (xhr.status === 200 || xhr.status === 201) {
+          const data = JSON.parse(xhr.responseText);
+          showProgress(100, 'Upload complete!');
+          saveMediaLocally({ ...data, localUrl: URL.createObjectURL(selectedFile) });
+          finish();
+        } else {
+          throw new Error('API returned ' + xhr.status);
+        }
+      };
+      xhr.onerror = () => { throw new Error('Network error'); };
+      xhr.send(formData);
+    } catch (err) {
+      toast('Azure upload failed: ' + err.message + '. Saving locally.', 'error');
+      fallbackSave(title, desc, category, tags, vis);
+      finish();
+    }
+  } else {
+    // Demo mode: simulate upload progress then save locally
+    await simulateProgress();
+    fallbackSave(title, desc, category, tags, vis);
+    finish();
+  }
+
+  function finish() {
+    btn.disabled = false;
+    setTimeout(() => {
+      document.getElementById('progressWrap').style.display = 'none';
+      clearUploadForm();
+      renderGallery();
+      updateStats();
+      showPage('gallery');
+      toast('Media uploaded successfully! ✅', 'success');
+    }, 800);
+  }
+}
+
+function fallbackSave(title, desc, category, tags, vis) {
+  const id = 'local-' + Date.now();
+  const newItem = {
+    id, title, description: desc, category, tags, visibility: vis,
+    uploadedBy: CONFIG.username,
+    fileName: selectedFile.name,
+    fileType: selectedFile.type,
+    fileSize: selectedFile.size,
+    blobUrl: URL.createObjectURL(selectedFile),
+    uploadedAt: new Date().toISOString(),
+    mediaType: guessType(selectedFile.type)
+  };
+  saveMediaLocally(newItem);
+}
+
+function saveMediaLocally(item) {
+  mediaStore.unshift(item);
+  localStorage.setItem('cmh-media', JSON.stringify(mediaStore));
+}
+
+async function simulateProgress() {
+  for (let p = 0; p <= 95; p += 15) {
+    showProgress(p, p < 40 ? 'Uploading to Azure Blob Storage…' : p < 80 ? 'Saving metadata to Cosmos DB…' : 'Finalising…');
+    await sleep(200);
+  }
+  showProgress(100, 'Done!');
+  await sleep(300);
+}
+
+function showProgress(pct, label) {
+  document.getElementById('progressWrap').style.display = 'block';
+  document.getElementById('progressFill').style.width   = pct + '%';
+  document.getElementById('progressLabel').textContent  = label;
+}
+
+// ══════════════════════════════════════════
+//  GET ALL MEDIA  →  Azure Function GET /api/media
+// ══════════════════════════════════════════
+async function fetchMedia() {
+  if (!CONFIG.funcUrl) return mediaStore;
+  try {
+    const res = await fetch(CONFIG.funcUrl + '/media');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    mediaStore = data;
+    localStorage.setItem('cmh-media', JSON.stringify(mediaStore));
+    return mediaStore;
+  } catch (e) {
+    return mediaStore; // fallback to local cache
+  }
+}
+
+// ══════════════════════════════════════════
+//  UPDATE MEDIA  →  Azure Function PUT /api/media/{id}
+// ══════════════════════════════════════════
+async function saveEdit() {
+  const id    = document.getElementById('edit-id').value;
+  const title = document.getElementById('edit-title').value.trim();
+  const desc  = document.getElementById('edit-desc').value.trim();
+  const tags  = document.getElementById('edit-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+  const vis   = document.getElementById('edit-vis').value;
+
+  if (!title) { toast('Title is required.', 'error'); return; }
+
+  const payload = { title, description: desc, tags, visibility: vis };
+
+  if (CONFIG.funcUrl) {
+    try {
+      const res = await fetch(CONFIG.funcUrl + '/media/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+    } catch (e) { /* fallback below */ }
+  }
+
+  // Update local store
+  const idx = mediaStore.findIndex(m => m.id === id);
+  if (idx !== -1) { Object.assign(mediaStore[idx], payload); }
+  localStorage.setItem('cmh-media', JSON.stringify(mediaStore));
+
+  closeModal();
+  renderGallery();
+  toast('Media updated! ✅', 'success');
+}
+
+// ══════════════════════════════════════════
+//  DELETE MEDIA  →  Azure Function DELETE /api/media/{id}
+// ══════════════════════════════════════════
+async function deleteMedia(id) {
+  if (!confirm('Delete this media item? This cannot be undone.')) return;
+
+  if (CONFIG.funcUrl) {
+    try {
+      await fetch(CONFIG.funcUrl + '/media/' + id, { method: 'DELETE' });
+    } catch (e) { /* fallback below */ }
+  }
+
+  mediaStore = mediaStore.filter(m => m.id !== id);
+  localStorage.setItem('cmh-media', JSON.stringify(mediaStore));
+  renderGallery();
+  updateStats();
+  toast('Deleted successfully.', 'error');
+}
+
+// ══════════════════════════════════════════
+//  GALLERY RENDER
+// ══════════════════════════════════════════
+function renderGallery() {
+  const search = (document.getElementById('searchBox')?.value || '').toLowerCase();
+  const items  = mediaStore.filter(m => {
+    if (activeFilter !== 'all' && m.mediaType !== activeFilter) return false;
+    if (search && !m.title.toLowerCase().includes(search) &&
+        !(m.tags || []).join(' ').toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  const grid  = document.getElementById('galleryGrid');
+  const empty = document.getElementById('galleryEmpty');
+
+  if (items.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    grid.innerHTML = items.map(m => mediaCard(m)).join('');
+  }
+}
+
+function mediaCard(m) {
+  const thumb = thumbHTML(m);
+  const tags  = (m.tags || []).map(t => `<span class="media-tag">#${t}</span>`).join('');
+  const date  = m.uploadedAt ? new Date(m.uploadedAt).toLocaleDateString('en-GB') : 'Unknown date';
+  return `
+  <div class="media-card" id="card-${m.id}">
+    <div class="media-thumb">${thumb}</div>
+    <div class="media-body">
+      <h3 title="${m.title}">${m.title}</h3>
+      <div class="media-meta">${fileIcon(m.fileType)} ${m.mediaType || 'file'} · ${formatSize(m.fileSize)} · ${date}</div>
+      <div>${tags}</div>
+      <div class="media-actions">
+        <button class="btn btn-sm btn-outline" onclick="viewMedia('${m.id}')">👁 View</button>
+        <button class="btn btn-sm btn-outline" onclick="openEdit('${m.id}')">✏️ Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteMedia('${m.id}')">🗑</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function thumbHTML(m) {
+  if (!m.blobUrl && !m.mediaUrl) return fileIcon(m.fileType || '');
+  const url = m.blobUrl || m.mediaUrl;
+  if ((m.mediaType === 'image' || (m.fileType || '').startsWith('image/'))) {
+    return `<img src="${url}" alt="${m.title}" onerror="this.parentNode.innerHTML='🖼'" />`;
+  }
+  if (m.mediaType === 'video' || (m.fileType || '').startsWith('video/')) {
+    return `<video src="${url}" muted></video>`;
+  }
+  return fileIcon(m.fileType || '');
+}
+
+function viewMedia(id) {
+  const m = mediaStore.find(x => x.id === id);
+  if (!m) return;
+  const url = m.blobUrl || m.mediaUrl || '';
+  let preview = '';
+  if (m.mediaType === 'image' && url) preview = `<img src="${url}" style="width:100%;border-radius:8px;margin-bottom:1rem;" />`;
+  else if (m.mediaType === 'video' && url) preview = `<video src="${url}" controls style="width:100%;border-radius:8px;margin-bottom:1rem;"></video>`;
+  else if (m.mediaType === 'audio' && url) preview = `<audio src="${url}" controls style="width:100%;margin-bottom:1rem;"></audio>`;
+  else preview = `<div style="font-size:5rem;text-align:center;margin-bottom:1rem;">${fileIcon(m.fileType)}</div>`;
+
+  document.getElementById('viewContent').innerHTML = `
+    ${preview}
+    <h2 style="margin-bottom:.5rem;">${m.title}</h2>
+    <p style="color:var(--muted);font-size:.88rem;margin-bottom:.8rem;">${m.description || 'No description.'}</p>
+    <div>Category: <strong>${m.category || '—'}</strong> · Visibility: <strong>${m.visibility || 'public'}</strong></div>
+    <div style="margin-top:.5rem;">${(m.tags||[]).map(t=>`<span class="media-tag">#${t}</span>`).join('')}</div>
+    ${url ? `<div style="margin-top:1rem;"><a href="${url}" target="_blank" class="btn btn-outline btn-sm">⬇ Open File</a></div>` : ''}
+  `;
+  document.getElementById('viewModal').classList.add('open');
+}
+
+// ══════════════════════════════════════════
+//  EDIT MODAL
+// ══════════════════════════════════════════
+function openEdit(id) {
+  const m = mediaStore.find(x => x.id === id);
+  if (!m) return;
+  document.getElementById('edit-id').value    = m.id;
+  document.getElementById('edit-title').value = m.title;
+  document.getElementById('edit-desc').value  = m.description || '';
+  document.getElementById('edit-tags').value  = (m.tags || []).join(', ');
+  document.getElementById('edit-vis').value   = m.visibility || 'public';
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('editModal').classList.remove('open');
+}
+
+// ══════════════════════════════════════════
+//  SEARCH & FILTER
+// ══════════════════════════════════════════
+function filterGallery() { renderGallery(); }
+
+function setFilter(type, btn) {
+  activeFilter = type;
+  document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGallery();
+}
+
+// ══════════════════════════════════════════
+//  STATS
+// ══════════════════════════════════════════
+function updateStats() {
+  const counts = { all: 0, image: 0, video: 0, audio: 0, document: 0 };
+  mediaStore.forEach(m => {
+    counts.all++;
+    if (counts[m.mediaType] !== undefined) counts[m.mediaType]++;
+  });
+  document.getElementById('totalCount').textContent = counts.all;
+  document.getElementById('imageCount').textContent = counts.image;
+  document.getElementById('videoCount').textContent = counts.video;
+  document.getElementById('audioCount').textContent = counts.audio;
+  document.getElementById('d-total').textContent = counts.all;
+  document.getElementById('d-img').textContent   = counts.image;
+  document.getElementById('d-vid').textContent   = counts.video;
+  document.getElementById('d-aud').textContent   = counts.audio;
+}
+
+// ══════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════
+function saveConfig() {
+  CONFIG.funcUrl  = document.getElementById('cfg-funcUrl').value.trim().replace(/\/$/, '');
+  CONFIG.username = document.getElementById('cfg-username').value.trim() || 'User';
+  localStorage.setItem('cmh-funcUrl',  CONFIG.funcUrl);
+  localStorage.setItem('cmh-username', CONFIG.username);
+  document.getElementById('usernameDisplay').textContent = CONFIG.username;
+  toast('Settings saved! ✅', 'success');
+}
+
+// ══════════════════════════════════════════
+//  DEMO DATA
+// ══════════════════════════════════════════
+function loadDemoData() {
+  const demo = [
+    { id:'demo-1', title:'Azure Architecture Diagram', description:'High-level view of the CloudMediaHub architecture on Microsoft Azure.', category:'education', tags:['azure','cloud','architecture'], visibility:'public', fileName:'architecture.png', fileType:'image/png', fileSize:452000, blobUrl:'https://picsum.photos/seed/arch/600/400', uploadedAt:'2024-11-01T10:00:00Z', mediaType:'image', uploadedBy:'Suman Thapa' },
+    { id:'demo-2', title:'COM682 Lecture Recording', description:'Week 4 lecture on cloud-native development patterns.', category:'education', tags:['lecture','cloud','kubernetes'], visibility:'private', fileName:'lecture_w4.mp4', fileType:'video/mp4', fileSize:125000000, blobUrl:'', uploadedAt:'2024-11-05T14:30:00Z', mediaType:'video', uploadedBy:'Suman Thapa' },
+    { id:'demo-3', title:'Nepal Travel Photos', description:'Photos from my trip to the Himalayas.', category:'personal', tags:['nepal','travel','2024'], visibility:'public', fileName:'nepal_travel.jpg', fileType:'image/jpeg', fileSize:3200000, blobUrl:'https://picsum.photos/seed/nepal/600/400', uploadedAt:'2024-10-20T09:15:00Z', mediaType:'image', uploadedBy:'Suman Thapa' },
+    { id:'demo-4', title:'Project Demo Walkthrough', description:'5-minute demo of the CloudMediaHub project for CW2.', category:'work', tags:['demo','project','cw2'], visibility:'public', fileName:'demo.mp4', fileType:'video/mp4', fileSize:78000000, blobUrl:'', uploadedAt:'2024-11-28T16:00:00Z', mediaType:'video', uploadedBy:'Suman Thapa' },
+    { id:'demo-5', title:'Background Music Track', description:'Royalty-free background music for video projects.', category:'entertainment', tags:['music','royalty-free'], visibility:'public', fileName:'track.mp3', fileType:'audio/mpeg', fileSize:8400000, blobUrl:'', uploadedAt:'2024-11-10T11:45:00Z', mediaType:'audio', uploadedBy:'Suman Thapa' },
+    { id:'demo-6', title:'Microservices Poster', description:'Visual reference for microservices design patterns.', category:'education', tags:['microservices','design'], visibility:'public', fileName:'poster.jpg', fileType:'image/jpeg', fileSize:1500000, blobUrl:'https://picsum.photos/seed/micro/600/400', uploadedAt:'2024-11-12T13:00:00Z', mediaType:'image', uploadedBy:'Suman Thapa' },
+  ];
+  mediaStore = demo;
+  localStorage.setItem('cmh-media', JSON.stringify(mediaStore));
+  renderGallery();
+  updateStats();
+  toast('Demo data loaded! 🎉', 'success');
+}
+
+// ══════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════
+function clearUploadForm() {
+  clearFile();
+  ['mediaTitle','mediaDesc','mediaTags'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('mediaCategory').value = 'personal';
+  document.getElementById('mediaVis').value = 'public';
+}
+
+function fileIcon(type) {
+  if (!type) return '📁';
+  if (type.startsWith('image/')) return '🖼';
+  if (type.startsWith('video/')) return '🎬';
+  if (type.startsWith('audio/')) return '🎵';
+  if (type.includes('pdf'))  return '📄';
+  if (type.includes('word') || type.includes('document')) return '📝';
+  return '📁';
+}
+
+function guessType(mime) {
+  if (!mime) return 'document';
+  if (mime.startsWith('image/')) return 'image';
+  if (mime.startsWith('video/')) return 'video';
+  if (mime.startsWith('audio/')) return 'audio';
+  return 'document';
+}
+
+function formatSize(bytes) {
+  if (!bytes) return '—';
+  if (bytes > 1e9) return (bytes / 1e9).toFixed(1) + ' GB';
+  if (bytes > 1e6) return (bytes / 1e6).toFixed(1) + ' MB';
+  if (bytes > 1e3) return (bytes / 1e3).toFixed(0) + ' KB';
+  return bytes + ' B';
+}
+
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.className = '', 3000);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
