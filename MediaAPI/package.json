@@ -1,0 +1,16 @@
+{
+  "name": "cloudmediahub-api",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "@azure/cosmos": "^4.1.0",
+    "@azure/storage-blob": "^12.17.0",
+    "parse-multipart-data": "^1.5.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
