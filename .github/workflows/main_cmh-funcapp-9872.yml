@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: '.'
+ AZURE_FUNCTIONAPP_PACKAGE_PATH: 'MediaAPI'
   NODE_VERSION: '22.x'
 
 jobs:
