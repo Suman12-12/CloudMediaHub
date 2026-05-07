@@ -614,7 +614,7 @@ async function uploadMedia() {
           throw new Error('API returned ' + xhr.status);
         }
       };
-      xhr.onerror = () => { throw new Error('Network error'); };
+      xhr.onerror = () => { fallbackSave(title, desc, category, tags, vis); finish(); return; };
       xhr.send(formData);
     } catch (err) {
       toast('Azure upload failed: ' + err.message + '. Saving locally.', 'error');
