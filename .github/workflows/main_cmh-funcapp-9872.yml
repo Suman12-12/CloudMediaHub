@@ -37,3 +37,4 @@ jobs:
         with:
           app-name: 'cmh-funcapp-9872'
           package: 'MediaAPI'
+          respect-funcignore: false
